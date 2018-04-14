@@ -110,15 +110,22 @@ function init() {
 
       if (finalShip != null) {
         api.lockShip(finalShip);
-        /*api.startLaserAttack();
-        api.lastAttack = $.now();
-        api.attacking = true;*/
+        if (window.settings.autoattack) {
+          api.startLaserAttack();
+          api.lastAttack = $.now();
+          api.attacking = true;
+        }
       }
     }
   });
 }
 
 function logic() {
+  if (window.settings.runfromenemy && running) {
+    window.dispatchEvent(new CustomEvent("logicEnd"));
+    return
+  }			
+	
   var collectBoxWhenCircle = false;
   var CircleBox = null;
 
@@ -144,13 +151,6 @@ function logic() {
     return;
 
   if (window.settings.pause) {
-    /*let newgate = api.findNearestGate(); //removed by request
-    if (newgate.gate) {
-      let x = newgate.gate.position.x;
-      let y = newgate.gate.position.y;
-      api.move(x, y);
-      window.movementDone = false;
-    }*/
     api.targetShip = null;
     api.attacking = false;
     api.triedToLock = false;
@@ -158,21 +158,12 @@ function logic() {
     api.targetBoxHash = null;
     return;
   }
-
-  var runFix;
-  var finalrunFix;
   
-  if (!window.movementDone && running) {
-    for (var property in api.ships) {
-      let runShip = api.ships[property];
+  if (window.settings.runfromenemy) {
+    var enemyresult=api.CheckForEnemy();
   
-      if (runShip.isEnemy && !runShip.isNpc) {
-        finalrunFix = runShip; 
-      }  
-    }  
-    
-    let gate = api.findNearestGate();
-    if (runShip.isEnemy && !runShip.isNpc && window.settings.runfromenemy) {
+    if (enemyresult.run) {
+      let gate = api.findNearestGateForRunAway(enemyresult.enemy);
       if (gate.gate) {
         let x = gate.gate.position.x;
         let y = gate.gate.position.y;
@@ -183,16 +174,15 @@ function logic() {
         api.targetBoxHash = null;
         api.move(x, y);
         window.movementDone = false;
+        running = true;
+        setTimeout(() => {
+          window.movementDone = true;
+          running = false;
+        }, MathUtils.random(30000,35000));
+	  return;	
       }
     }
-
-    if (finalrunFix == null && gate.gate && window.hero.position.x == gate.gate.position.x && window.hero.position.y == gate.gate.position.y) {
-      window.movementDone = true;
-      running = false;   
-      return;     
-    }
-    return;
-  }     
+  }	
 
   if (window.settings.zeta) {
     let zetagg = api.findNearestGatebyID(54);
@@ -340,9 +330,11 @@ function logic() {
     if (box && box.distanceTo(window.hero.position) > 1000) {
       api.collectTime = $.now();
     } else {
-      delete api.boxes[api.targetBoxHash];
-      api.blackListHash(api.targetBoxHash);
-      api.targetBoxHash = null;
+      if (box.type != ("MUCOSUM" || "PRISMATIUM" || "SCRAPIUM" || "BOLTRUM")) {
+        delete api.boxes[api.targetBoxHash];
+        api.blackListHash(api.targetBoxHash);
+        api.targetBoxHash = null;
+      }
     }
   }
 
@@ -412,7 +404,6 @@ function logic() {
       CircleBox = null;
     }
     window.movementDone = false;
-    running = true;
   }
 
   window.dispatchEvent(new CustomEvent("logicEnd"));
