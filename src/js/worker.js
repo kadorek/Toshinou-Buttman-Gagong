@@ -425,3 +425,27 @@ function logic() {
 
   window.dispatchEvent(new CustomEvent("logicEnd"));
 }
+
+function Eliptic(enemyPosition) {
+    var shortR = window.settings.npcCircleRadius;
+    var longR = window.settings.npcCircleRadius - ((Math.random() * 10) + 1);
+    let rnd = Math.floor(Math.random() * 7) + 1
+    longR += rnd;
+    let cw = false;
+    if (rnd < 4) {
+        cw = true;
+    }
+    let enemy = enemyPosition;
+    let f = Math.atan2(window.hero.position.x - enemy.x, window.hero.position.y - enemy.y) + 0.5;
+    let s = Math.PI / 180;
+    f += s;
+    if (cw) {
+        x = enemy.x - (window.settings.npcCircleRadius * Math.sin(f * -1) + Math.floor(Math.random() * 20));
+        y = enemy.y - (window.settings.npcCircleRadius * Math.cos(f * -1) + Math.floor(Math.random() * 20));
+    } else {
+        x = enemy.x + window.settings.npcCircleRadius * Math.sin(f) + Math.floor(Math.random() * 20);
+        y = enemy.y + window.settings.npcCircleRadius * Math.cos(f) + Math.floor(Math.random() * 20);
+    }
+
+    return { _x: x, _y: y };
+}
